@@ -16,9 +16,9 @@ export async function POST(req: NextRequest) {
 	}
 
 	try {
-		const { title, content } = await req.json();
+		const body = await req.json();
 
-		if (!title || title.trim().length === 0 || !content) {
+		if (!body.title || body.title.trim().length === 0 || !body.content) {
 			return NextResponse.json(
 				{ success: false, error: "Title and Content are required" },
 				{ status: 400 }
@@ -35,8 +35,8 @@ export async function POST(req: NextRequest) {
 
 		const note = await prisma.note.create({
 			data: {
-				title: title.trim(),
-				content,
+				title: body.title.trim(),
+				content: body.content,
 				ownerId: findUser.id,
 			},
 		});
