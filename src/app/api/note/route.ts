@@ -56,6 +56,8 @@ export async function GET(req: NextRequest) {
 	const session = await getServerSession();
 
 	if (!session?.user?.email) {
+		console.log("Unauthorized session");
+
 		return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 	}
 
@@ -67,6 +69,8 @@ export async function GET(req: NextRequest) {
 		});
 
 		if (!findUser) {
+			console.log("User not found");
+
 			return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 		}
 
