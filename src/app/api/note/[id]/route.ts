@@ -124,3 +124,49 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 		);
 	}
 }
+
+// GET /api/note/[id] - Get a note by ID
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+	const session = await getServerSession();
+
+	if (!session?.user?.email) {
+		return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+	}
+
+	const userEmail = session.user.email;
+
+	try {
+		const findUser = await prisma.user.findUnique({
+			where: { email: userEmail },
+		});
+
+		if (!findUser) {
+			return NextResponse.json({ success: false, error: "User not found" }, { status: 401 });
+		}
+
+		const id = (await params).id;
+		if (!id) {
+			return NextResponse.json({ success: false, error: "Invalid note ID" }, { status: 400 });
+		}
+
+		const note = await prisma.note.findFirst({
+			where: {
+				id,
+				ownerId: findUser.id,
+			},
+			select: { id: true, title: true, content: true, updatedAt: true },
+		});
+
+		if (!note) {
+			return NextResponse.json({ success: false, error: "Note not found" }, { status: 404 });
+		}
+
+		return NextResponse.json({ success: true, data: note });
+	} catch (error) {
+		console.error("GET /api/note/[id] error", error);
+		return NextResponse.json(
+			{ success: false, error: "Failed to fetch note by id" },
+			{ status: 500 }
+		);
+	}
+}
