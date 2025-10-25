@@ -35,6 +35,9 @@ model Note {
 
   owner      User         @relation("UserNotes", fields: [ownerId], references: [id])
   sharedWith SharedNote[]
+
+  shareToken String?         @unique
+  shareMode  SharedNoteRole? // EDIT or VIEW
 }
 
 model SharedNote {
