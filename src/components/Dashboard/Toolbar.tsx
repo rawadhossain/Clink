@@ -1,7 +1,12 @@
+"use client";
+
 import { LayoutGrid, List, PlusCircle } from "lucide-react";
 import { Button } from "../ui/button";
 import { ThemeToggle } from "../theme-toggle";
 import AnimatedRefreshButton from "../RefreshButton";
+import { signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 type ViewMode = "grid" | "list";
 
@@ -11,9 +16,29 @@ interface ToolbarProps {
 }
 
 export default function Toolbar({ currentView, onViewChange }: ToolbarProps) {
+	const router = useRouter();
+
+	const handleLogout = async () => {
+		try {
+			await signOut({
+				redirect: false,
+				callbackUrl: "/",
+			});
+			toast.success("Logged out successfully");
+			router.push("/");
+			router.refresh();
+		} catch (error) {
+			console.error("Logout error:", error);
+			toast.error("Failed to log out. Please try again.");
+		}
+	};
+
 	return (
 		<div className="flex items-center justify-between px-8 py-4">
 			<h2 className="text-xl font-semibold text-gray-700">Recent Notes</h2>
+			<Button variant="destructive" onClick={handleLogout}>
+				Log out
+			</Button>
 			<div className="flex items-center gap-2">
 				{/* A more modern "Create New" button */}
 				<AnimatedRefreshButton />
