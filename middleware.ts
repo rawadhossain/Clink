@@ -1,59 +1,48 @@
-import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-export default withAuth(
-	async function middleware(req) {
-		const token = req.nextauth.token;
-		const pathname = req.nextUrl.pathname;
+const AUTH_ROUTES = ["/auth/signin"];
+const PUBLIC_ROUTES = ["/", "/simple", "/notes/shared"];
+const DEFAULT_REDIRECT = "/notes";
 
-		// Allow access to public routes
-		if (pathname === "/" || pathname.startsWith("/api/auth")) {
-			return NextResponse.next();
-		}
+function matchesRoute(pathname: string, route: string) {
+	if (route === "/") {
+		return pathname === "/";
+	}
 
-		// If user is authenticated and tries to access auth pages, redirect to appropriate page
-		if (pathname.startsWith("/auth") && token) {
-			// if (!token.onboardingCompleted) {
-			// 	return NextResponse.redirect(new URL("/onboarding", req.url));
-			// }
-			return NextResponse.redirect(new URL("/notes", req.url));
-		}
+	return pathname === route || pathname.startsWith(`${route}/`);
+}
 
-		// If user is authenticated but hasn't completed onboarding
-		// if (token && !token.onboardingCompleted && !pathname.startsWith("/onboarding")) {
-		// 	return NextResponse.redirect(new URL("/onboarding", req.url));
-		// }
+function isAuthRoute(pathname: string) {
+	return AUTH_ROUTES.some((route) => matchesRoute(pathname, route));
+}
 
-		// If user has completed onboarding but tries to access onboarding page
+function isPublicRoute(pathname: string) {
+	return PUBLIC_ROUTES.some((route) => matchesRoute(pathname, route));
+}
+
+export async function middleware(request: NextRequest) {
+	const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+	const { pathname, search } = request.nextUrl;
+
+	if (isAuthRoute(pathname)) {
 		if (token) {
-			return NextResponse.redirect(new URL("/notes", req.url));
+			const callbackUrl = request.nextUrl.searchParams.get("callbackUrl") ?? DEFAULT_REDIRECT;
+			return NextResponse.redirect(new URL(callbackUrl, request.url));
 		}
 
 		return NextResponse.next();
-	},
-	{
-		callbacks: {
-			authorized: ({ token, req }) => {
-				const pathname = req.nextUrl.pathname;
-
-				// Allow access to public routes
-				if (
-					pathname === "/" ||
-					pathname.startsWith("/auth") ||
-					pathname.startsWith("/api/auth")
-				) {
-					return true;
-				}
-
-				// For all other routes, require authentication
-				return !!token;
-			},
-		},
-		pages: {
-			signIn: "/auth/signin",
-		},
 	}
-);
+
+	if (!token && !isPublicRoute(pathname)) {
+		const signInUrl = new URL("/auth/signin", request.url);
+		signInUrl.searchParams.set("callbackUrl", `${pathname}${search}`);
+		return NextResponse.redirect(signInUrl);
+	}
+
+	return NextResponse.next();
+}
 
 export const config = {
 	matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
