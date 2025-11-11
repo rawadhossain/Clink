@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/db";
 import { hash } from "bcryptjs";
 import { z } from "zod";
 
@@ -47,7 +47,6 @@ export async function POST(request: NextRequest) {
 				email,
 				password: hashedPassword,
 				name: name || null,
-				onboardingCompleted: false,
 			},
 		});
 
