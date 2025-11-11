@@ -17,7 +17,7 @@ export default function DashboardPage() {
 
 	useEffect(() => {
 		axios
-			.get("/api/note")
+			.get("/api/test")
 			.then((response) => {
 				if (response.data.success) {
 					setNoteData(response.data.data);
@@ -25,10 +25,6 @@ export default function DashboardPage() {
 			})
 			.catch((error) => {
 				console.error("Failed to fetch notes:", error);
-				if (error.response?.status === 401) {
-					// Redirect to sign-in if unauthorized
-					window.location.href = "/auth/signin?callbackUrl=/notes";
-				}
 			});
 	}, []);
 
