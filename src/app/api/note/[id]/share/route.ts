@@ -56,7 +56,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 			data: {
 				noteId: updatedNote.id,
 				shareLink,
-				mode: updatedNote.shareMode,
+				mode: updatedNote.shareMode, // "EDIT" | "VIEW"
 			},
 		});
 	} catch (error) {
